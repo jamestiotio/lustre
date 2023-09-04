@@ -19,7 +19,7 @@
       // When the single page app is loaded further down in this file,
       // the correct url will be waiting in the browser's history for
       // the single page app to route accordingly.
-      if (window.location[1] === "/") {
+      if (window.location.search[1] === "/") {
         const decoded = window.location.search
           .slice(1)
           .split("&")
