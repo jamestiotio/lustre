@@ -103,7 +103,10 @@ pub fn on_blur(msg: msg) -> Attribute(msg)
 ### on | erlang javascript
 
 ```gleam
-pub fn on(name: String, handler: fn(Dynamic) -> Option(msg)) -> Attribute(msg)
+pub fn on(
+  name: String,
+  handler: fn(Dynamic) -> Result(msg, error)
+) -> Attribute(msg)
 ```
 
 ### prevent_default | javascript

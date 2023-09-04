@@ -49,13 +49,9 @@ of the project. This is the minimal code you'll typically want to get started:
     <script type="module">
       import { main } from "./build/dev/javascript/lustre_quickstart/app.mjs";
 
-      document.addEventListener(
-        "DOMContentLoaded",
-        () => {
-          main();
-        },
-        { once: true }
-      );
+      document.addEventListener("DOMContentLoaded", () => {
+        main();
+      });
     </script>
   </head>
 

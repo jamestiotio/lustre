@@ -22,6 +22,7 @@ JavaScript target, and `start` will only succeed when ran in the browser.
 pub type Error {
   AppAlreadyStarted
   AppNotYetStarted
+  BadComponentName
   ComponentAlreadyRegistered
   ElementNotFound
   NotABrowser
@@ -99,7 +100,9 @@ application has not yet been started.
 
 Components take the same Model-View-Update building blocks used to create Lustre
 programs and allow them to be used as reusable stateful components in other
-programs.
+programs. A component in Lustre means something much more specific than other
+communities and frameworks. In those spaces, a "component" often refers to anything
+ 
 
 ### component | javascript
 
@@ -112,6 +115,22 @@ pub fn component(
   on_attribute_change: Map(String, Decoder(msg)),
 ) -> Result(Nil, Error)
 ```
+
+Register a component with the runtime from the familiar Model-View-Update building
+blocks. Compared to an application, we have two additional arguments:
+
+- A name for the component. This name must follow the same rules laid out in the
+  [custom element spec](https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name)
+  and should contain a hyphen (`-`) to avoid clashes with built-in HTML elements.
+- A map of attribute names to listen for changes to and a decoder for each to
+  decode those attributes into messages to send to your component's `update`
+  function.
+
+If it feels like the API for registering components is a little more verbose than
+you're used to, that's because it is! You can get surprisingly far storing state
+in your top level application and passing it down to different view functions
+without needing to use components at all. In fact, for communities like Elm this
+is the _only_ way to do things.
 
 ## Utilities
 
