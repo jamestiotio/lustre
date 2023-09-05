@@ -28,7 +28,7 @@ $ gleam new lustre_quickstart && gleam add lustre
 
 In a real project you probably want to use a build tool like [vite](https://vitejs.dev)
 along with the [vite-gleam](https://github.com/Enderchief/vite-gleam) plugin, but
-to keep this guide simple we'll just show you what code your need to write and leave
+to keep this guide simple we'll just show you what code you need to write and leave
 the details on serving the app up to you. MDN have a handy guide covering some
 different options to [set up a local web server for development](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Tools_and_setup/set_up_a_local_testing_server)
 if you need some ideas.
