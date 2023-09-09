@@ -2,19 +2,63 @@
 
 ## Applications
 
+On the client, Lustre applications are built on the Model-View-Update architecture.
+This pattern was popularised by the Elm programming language before being adopted
+by other state mangement libraries like Redux and Vuex.
+
+Your applications will be made up of three fundamental parts:
+
+- A `Model` that represents the entire state of your application and an `init`
+  function to create it.
+- A `Msg` type that represents all the ways the outside world can communicate
+  with your application and an `update` function that that modifies the model
+  in response to these messages.
+- A `view` function that renders the current state of your application to the
+  DOM.
+
+```
+                                         ┌--------+
+                                         |        |
+                                         | update |
+                                         |        |
+                                         +--------+
+                                           ^    |
+                                           |    |
+                                       Msg |    | #(Model, Effect(Msg))
+                                           |    |
+                                           |    v
+┌------+                         ┌------------------------+
+|      |  #(Model, Effect(Msg))  |                        |
+| init |------------------------>|     Lustre Runtime     |
+|      |                         |                        |
++------+                         +------------------------+
+                                           ^    |
+                                           |    |
+                                       Msg |    | Model
+                                           |    |
+                                           |    v
+                                         ┌--------+
+                                         |        |
+                                         |  view  |
+                                         |        |
+                                         +--------+
+```
+
 ### App | erlang javascript
 
 ```gleam
 pub type App(flags, model, msg)
 ```
 
-The `App` type typically represents all the parts that make up a Lustre program
-in the Model-View-Update architecture, along with the runtime necessary to run
-it.
+The `App` type represents all the parts that make up a Lustre program in the
+Model-View-Update architecture along with the runtime necessary to run it.
 
 Although the type itself is exposed to both the Erlang and JavaScript targets,
 the functions in this module to construct an `App` are only available in the
 JavaScript target, and `start` will only succeed when ran in the browser.
+
+In the future we may have a way to run Lustre applications on the backend, if
+you have any ideas on how to achieve this I'd love to hear about them!
 
 ### Error | erlang javascript
 
@@ -26,6 +70,29 @@ pub type Error {
   ComponentAlreadyRegistered
   ElementNotFound
   NotABrowser
+}
+```
+
+The `Error` type represents all the ways that a Lustre program can fail. These
+include things like trying to start an application that has already been started,
+registering a component with a name that is not valid, or trying to start an
+application in a context that is not a browser.
+
+Often you will want to perform a couple of these actions together, and unifying
+the error type makes this easy. In many of the examples we `let assert` that the
+result is `Ok` but if you wanted to be a bit more dilligent you might use
+`result.try` instead:
+
+```gleam
+import gleam/result
+import lustre
+
+pub fn main () {
+  use _ <- result.try(lustre.component("my-component", ...))
+  let app = lustre.application(...)
+  use dispatch <- result.try(lustre.start(app, "[data-lustre-app]", Nil))
+
+  ...
 }
 ```
 
@@ -99,10 +166,19 @@ application has not yet been started.
 ## Components
 
 Components take the same Model-View-Update building blocks used to create Lustre
-programs and allow them to be used as reusable stateful components in other
-programs. A component in Lustre means something much more specific than other
-communities and frameworks. In those spaces, a "component" often refers to anything
- 
+applications and allow them to be used as reusable stateful components. This is
+slightly different to how components are used in other frameworks like React
+where "component" refers more generally to any reusable piece of UI.
+
+In Lustre, functions that return an `Element` are known as "view functions" and
+components are more specific abstractions that encapsulate state and behaviour
+you might not want to deal with in your top-level application.
+
+Resist the urge to reach for components too early. The Elm community has managed
+to make do without components at all: you can get surprisingly far storing state
+in your top level application and passing it down to different view functions.
+This comes with the added benefit of it being much easier to reason about your
+UI as a whole.
 
 ### component | javascript
 
@@ -140,8 +216,22 @@ is the _only_ way to do things.
 pub fn is_browser() -> Bool
 ```
 
+Gleam has conditional compilation depending on whether you are targetting Erlang
+or JavaScript, but sometimes you want to be a bit more specific than that and
+check if you're running in the browser.
+
+This is a runtime check that will tell you just that. You could use this to create
+a view function that renders something simple on the backend but more complex or
+interactive on the frontend.
+
 ### is_registered | erlang javascript
 
 ```gleam
-pub fn is_registered(_name: String) -> Bool
+pub fn is_registered(name: String) -> Bool
 ```
+
+Lustre's components are built directly on the
+[custom element spec](https://html.spec.whatwg.org/multipage/custom-elements.html)
+which means they share the same global registery as other custom elements. This
+function can tell you if the name you want to use is already registered, by another
+Lustre component or otherwise.

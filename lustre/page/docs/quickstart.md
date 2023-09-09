@@ -22,7 +22,7 @@ To get started, we'll scaffold a new Gleam project using `gleam new`. If you've
 found your way to this guide but don't already know what Gleam is you can read
 about it over at [gleam.run](https://gleam.run).
 
-```sh
+```shell
 $ gleam new lustre_quickstart && gleam add lustre
 ```
 
@@ -169,7 +169,7 @@ interactive SPAs. It is possible to render Lustre elements to static HTML and
 simply use Lustre as a templating DSL. As before, we'll start by scaffolding a
 new Gleam project and adding Lustre as a dependency:
 
-```sh
+```shell
 $ gleam new lustre_quickstart && gleam add lustre
 ```
 
