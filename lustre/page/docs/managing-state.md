@@ -22,40 +22,63 @@ too) but still manage things from your top-level application.
 For example, we may define a `counter` module:
 
 ```gleam
-// counter.gleam
+// app/counter.gleam
+
 import gleam/int
 import lustre/element.{Element}
 import lustre/element/html
 import lustre/event
 
-pub opaque type Model {
-  Model(count: Int)
-}
+pub type Model = Int
 
 pub fn init(_) -> Model {
-  Model(0)
+  0
 }
 
-pub opauqe type Msg {
+pub type Msg {
   Incr
   Decr
+  Double
+  Reset
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
   case msg {
-    Incr -> Model(model.count + 1)
-    Decr -> Model(model.count - 1)
+    Incr -> model + 1
+    Decr -> model - 1
+    Double -> model * 2
+    Reset -> 0
   }
 }
+```
 
-pub fn view(model: Model) -> Html Msg {
-  let count = int.to_string(model.count)
+Now we can create and manage multiple counters in our main application:
 
-  html.div([], [
-    html.button([ event.on_click(Decr) ], [ element.text("-") ]),
-    html.div([], [ html.text(count) ]),
-    html.button([ event.on_click(Incr) ], [ element.text("+") ])
-  ])
+```
+import app/counter
+
+```
+
+This approach can get quite sophisticated. For example you may want to make your
+component's `Model` type opaque and optionally provide some helper functions to
+extract any data parents may need to know about. You might also choose to split
+your component's `Msg` type and keep a separate `InternalMsg` type that can't
+be constructed outside of the module.
+
+Taking the counter example from above, perhaps we want parents to be able to
+reset the counter and query the current count, but all other messages are handled
+internally:
+
+```gleam
+pub type Msg {
+  Reset
+  Internal(InternalMsg)
+}
+
+pub opaque type InternalMsg {
+  Incr
+  Decr
+  Double
 }
 ```
 
