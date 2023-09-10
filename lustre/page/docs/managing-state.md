@@ -10,8 +10,6 @@ _without_ using local component state. It's important to get a solid grasp on
 this _before_ looking at Lustre's approach to components because they're built on
 the same principles!
 
-<iframe style="border: 1px solid rgba(0, 0, 0, 0.1);border-radius:2px;" width="800" height="450" src="https://codesandbox.io/p/sandbox/lustre-base-97896c?file=%2Fsrc%2Fapp.gleam%3A1%2C1&embed=1" allowfullscreen></iframe>
-
 ## Semi-encapsulated components
 
 Before reaching for Lustre's stateful components, you might consider a
@@ -29,10 +27,12 @@ import lustre/element.{Element}
 import lustre/element/html
 import lustre/event
 
-pub type Model = Int
+pub opaque type Model {
+  Model(Int)
+}
 
-pub fn init(_) -> Model {
-  0
+pub fn init() -> Model {
+  Model(0)
 }
 
 pub type Msg {
@@ -43,21 +43,89 @@ pub type Msg {
 }
 
 pub fn update(model: Model, msg: Msg) -> Model {
+  let Model(count) = model
   case msg {
-    Incr -> model + 1
-    Decr -> model - 1
-    Double -> model * 2
-    Reset -> 0
+    Incr -> Model(count + 1)
+    Decr -> Model(count - 1)
+    Double -> Model(count * 2)
+    Reset -> Model(0)
   }
+}
+
+pub fn view(model: Model) -> Element(Msg) {
+  let Model(count) = model
+  let count = int.to_string(count)
+
+  html.div([], [
+    html.p([], [element.text(count)]),
+    html.button([event.on_click(Decr)], [html.text("-")]),
+    html.button([event.on_click(Incr)], [html.text("+")]),
+    html.button([event.on_click(Double)], [html.text("x2")]),
+    html.button([event.on_click(Reset)], [html.text("Reset")]),
+  ])
 }
 ```
 
 Now we can create and manage multiple counters in our main application:
 
-```
-import app/counter
+```gleam
+// app.gleam
 
+import app/counter
+import lustre
+import lustre/element.{Element}
+import lustre/element/html
+
+pub fn main() {
+  let app = lustre.simple(init, update, view)
+  let assert Ok(_) = lustre.start(app, "[data-lustre-app]", Nil)
+}
+
+pub type Model {
+  Model(
+    counter1: counter.Model,
+    counter2: counter.Model,
+  )
+}
+
+pub fn init() -> Model {
+  Model(
+    counter.init(),
+    counter.init(),
+  )
+}
+
+pub type Msg {
+  Counter1(counter.Msg)
+  Counter2(counter.Msg)
+}
+
+pub fn update(model: Model, msg: Msg) -> Model {
+  case msg {
+    Counter1(msg) -> Model(..model,
+      counter1: counter.update(model.counter1, msg)
+    )
+
+    Counter2(msg) -> Model(..model,
+      counter2: counter.update(model.counter2, msg)
+    )
+  }
+}
+
+pub fn view(model: Model) -> Element(Msg) {
+  let Model(counter1, counter2) = model
+
+  html.div([], [
+    counter.view(counter1) |> element.map(Counter1),
+    counter.view(counter2) |> element.map(Counter2),
+  ])
+}
 ```
+
+Note that we're using [`element.map`](/api/lustre/element#map) to map the events
+from each counter view to a `Msg` type our application understands! In Lustre,
+the [`Element`](/api/lustre/element#element-type) type is parameterised by the
+type of messages they can emit. This is how Lustre achieves type-safe event handling.
 
 This approach can get quite sophisticated. For example you may want to make your
 component's `Model` type opaque and optionally provide some helper functions to
@@ -65,7 +133,7 @@ extract any data parents may need to know about. You might also choose to split
 your component's `Msg` type and keep a separate `InternalMsg` type that can't
 be constructed outside of the module.
 
-Taking the counter example from above, perhaps we want parents to be able to
+Taking the counter example from above, perhaps we want parents to only be able to
 reset the counter and query the current count, but all other messages are handled
 internally:
 
@@ -80,11 +148,20 @@ pub opaque type InternalMsg {
   Decr
   Double
 }
+
+pub fn count(model: Model) -> Int {
+  let Model(count) = model
+  count
+}
 ```
 
-Once you find your semi-encampsulated components have a lot of internal state or
-many messages that are only relevant to that component, it may be time to
-consider a [stateful component](/docs/components) instead.
+The parent could still have a button to reset all counters back to `0`, but it
+wouldn't be able to muck with the internal state in any other way.
+
+After a while you may you find your semi-encampsulated components have a lot of
+internal state or many messages that are only relevant to that component. If that
+happens, it may be time to consider a [stateful component](/docs/components)
+instead.
 
 ## Separating page state
 
